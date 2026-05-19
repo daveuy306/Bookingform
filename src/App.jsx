@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Turnstile } from '@marsidev/react-turnstile'; // Import Turnstile
+import { Turnstile } from '@marsidev/react-turnstile';
 import { 
   Calendar, User, Phone, CheckCircle2, ChevronRight, 
   ChevronLeft, Send, MapPin, Star, Gift 
@@ -49,7 +49,7 @@ const UyStudiosBooking = () => {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
-  const [turnstileToken, setTurnstileToken] = useState(null); // Track security verification
+  const [turnstileToken, setTurnstileToken] = useState(null);
   
   const [formData, setFormData] = useState({
     email: '', clientName: '', phone: '', serviceNeeded: '', 
@@ -96,7 +96,6 @@ const UyStudiosBooking = () => {
   };
 
   const handleFinalSubmit = async () => {
-    // Prevent submission if Turnstile hasn't verified
     if (!turnstileToken) {
       alert("Please complete the security check to proceed.");
       return;
@@ -106,7 +105,7 @@ const UyStudiosBooking = () => {
     const dataToSubmit = {
         ...formData,
         videoProduct: formData.videoProduct.join(', '),
-        turnstile: turnstileToken // Sending token to backend for optional validation
+        turnstile: turnstileToken
     };
 
     try {
@@ -120,13 +119,30 @@ const UyStudiosBooking = () => {
     setIsSubmitting(false);
   };
 
+  // --- REPAIRED RESPONSIVE SPLASH SCREEN ---
   if (loading) return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden">
-      <div className="absolute w-[300px] h-[300px] bg-blue-600/20 blur-[120px] rounded-full animate-pulse" />
-      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1.5 }}>
-        <h1 className="text-4xl font-light tracking-[0.6em] text-white uppercase relative z-10">Uy Studios</h1>
-        <div className="w-48 h-[1px] bg-white/10 mt-8 mx-auto overflow-hidden relative z-10">
-          <motion.div initial={{ x: '-100%' }} animate={{ x: '100%' }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="w-full h-full bg-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.8)]" />
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center relative overflow-hidden px-6 text-center">
+      {/* Centered Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-blue-600/20 blur-[100px] rounded-full animate-pulse" />
+      
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }} 
+        animate={{ opacity: 1, scale: 1 }} 
+        transition={{ duration: 1.5 }}
+        className="relative z-10 w-full"
+      >
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-light tracking-[0.4em] sm:tracking-[0.6em] text-white uppercase leading-relaxed">
+          Uy Studios
+        </h1>
+        
+        {/* Centered Progress Bar */}
+        <div className="w-32 sm:w-48 h-[1px] bg-white/10 mt-8 mx-auto overflow-hidden">
+          <motion.div 
+            initial={{ x: '-100%' }} 
+            animate={{ x: '100%' }} 
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} 
+            className="w-full h-full bg-blue-400 shadow-[0_0_15px_rgba(96,165,250,0.8)]" 
+          />
         </div>
       </motion.div>
     </div>
@@ -206,7 +222,6 @@ const UyStudiosBooking = () => {
                 <InputField label="Additional Requirements" icon={Star} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} />
                 <InputField label="Referral / Coupon" icon={Gift} value={formData.coupon} onChange={e => setFormData({...formData, coupon: e.target.value})} />
                 
-                {/* Turnstile verification for Photo-only path */}
                 {formData.serviceNeeded === 'Photography' && (
                   <div className="mt-4 flex justify-center scale-90 origin-center opacity-80 hover:opacity-100 transition-opacity">
                     <Turnstile 
@@ -238,7 +253,6 @@ const UyStudiosBooking = () => {
                   </div>
                 </div>
 
-                {/* Turnstile verification for Video/Both path */}
                 <div className="flex justify-center scale-90 origin-center opacity-80 hover:opacity-100 transition-opacity pb-4">
                   <Turnstile 
                     siteKey={TURNSTILE_SITE_KEY} 
