@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Turnstile } from '@marsidev/react-turnstile'; // Import Turnstile
 import { 
   Calendar, User, Phone, CheckCircle2, ChevronRight, 
   ChevronLeft, Send, MapPin, Star, Gift 
@@ -48,15 +49,17 @@ const UyStudiosBooking = () => {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState(1);
+  const [turnstileToken, setTurnstileToken] = useState(null); // Track security verification
   
   const [formData, setFormData] = useState({
     email: '', clientName: '', phone: '', serviceNeeded: '', 
     photoType: '', enhancement: '', eventDate: '', notes: '', 
     coupon: '', location: '', duration: '', 
-    videoProduct: [] // Initialized as array for multi-select
+    videoProduct: [] 
   });
 
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz3QaFdbeegeOLY23Wbg3lmpOKyfbcybrYXqhQ6_TLycMpB0vqwPea-ScbVe284OiUkhA/exec";
+  const TURNSTILE_SITE_KEY = "0x4AAAAAADSbnMYDzBynsnXL";
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 2500);
@@ -93,11 +96,17 @@ const UyStudiosBooking = () => {
   };
 
   const handleFinalSubmit = async () => {
+    // Prevent submission if Turnstile hasn't verified
+    if (!turnstileToken) {
+      alert("Please complete the security check to proceed.");
+      return;
+    }
+
     setIsSubmitting(true);
-    // Join array into string for Google Sheets readability
     const dataToSubmit = {
         ...formData,
-        videoProduct: formData.videoProduct.join(', ')
+        videoProduct: formData.videoProduct.join(', '),
+        turnstile: turnstileToken // Sending token to backend for optional validation
     };
 
     try {
@@ -196,11 +205,22 @@ const UyStudiosBooking = () => {
                 <InputField label="Target Event Date" icon={Calendar} type="date" value={formData.eventDate} onChange={e => setFormData({...formData, eventDate: e.target.value})} />
                 <InputField label="Additional Requirements" icon={Star} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} />
                 <InputField label="Referral / Coupon" icon={Gift} value={formData.coupon} onChange={e => setFormData({...formData, coupon: e.target.value})} />
+                
+                {/* Turnstile verification for Photo-only path */}
+                {formData.serviceNeeded === 'Photography' && (
+                  <div className="mt-4 flex justify-center scale-90 origin-center opacity-80 hover:opacity-100 transition-opacity">
+                    <Turnstile 
+                      siteKey={TURNSTILE_SITE_KEY} 
+                      theme="dark" 
+                      onSuccess={(token) => setTurnstileToken(token)} 
+                    />
+                  </div>
+                )}
               </div>
             )}
 
             {step === 6 && (
-              <div className="space-y-6 max-h-[50vh] overflow-y-auto pr-3 custom-scrollbar py-2">
+              <div className="space-y-6 max-h-[55vh] overflow-y-auto pr-3 custom-scrollbar py-2">
                 <InputField label="Venue Location" icon={MapPin} value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="City or Specific Venue" />
                 <div>
                   <label className="block text-zinc-500 text-[10px] mb-3 uppercase tracking-[0.2em] font-bold">Coverage Window</label>
@@ -211,17 +231,20 @@ const UyStudiosBooking = () => {
                 <div>
                   <label className="block text-zinc-500 text-[10px] mb-1 uppercase tracking-[0.2em] font-bold">Deliverable Format</label>
                   <p className="text-[9px] text-blue-400/60 uppercase tracking-widest mb-4">Select all that apply</p>
-                  <div className="space-y-2">
+                  <div className="space-y-2 mb-6">
                     {['Highlight film', 'Color corrected raw footage', 'Social Media Teaser', 'Full Documentary Edit'].map(p => (
-                        <SelectionCard 
-                            key={p} 
-                            label={p} 
-                            multi={true} 
-                            selected={formData.videoProduct} 
-                            onClick={() => toggleVideoProduct(p)} 
-                        />
+                        <SelectionCard key={p} label={p} multi={true} selected={formData.videoProduct} onClick={() => toggleVideoProduct(p)} />
                     ))}
                   </div>
+                </div>
+
+                {/* Turnstile verification for Video/Both path */}
+                <div className="flex justify-center scale-90 origin-center opacity-80 hover:opacity-100 transition-opacity pb-4">
+                  <Turnstile 
+                    siteKey={TURNSTILE_SITE_KEY} 
+                    theme="dark" 
+                    onSuccess={(token) => setTurnstileToken(token)} 
+                  />
                 </div>
               </div>
             )}
